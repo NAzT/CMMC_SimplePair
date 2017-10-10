@@ -15,13 +15,22 @@ void CMMC_SimplePair::mode(CMMC_SimplePair_mode_t mode) {
     this->_mode = mode;
 }
 
+void CMMC_SimplePair::set_pair_key(u8 *tmp) {
+  memcpy(this->tmp_key, tmp, 16);
+}
+
 void CMMC_SimplePair::on_sp_st_finish(u8* sa) {
   if (this->_mode == MODE_AP)
   {
     u8 ex_key[16];
     simple_pair_get_peer_ref(NULL, NULL, ex_key);
 		Serial.printf("Simple Pair: AP FINISH\n");
+    Serial.printf("slave mac: \n");
+    show_key(sa, 6);
+    Serial.println();
+    Serial.printf("exkey: \n");
     show_key(ex_key, 16);
+    Serial.println();
 
 		/* if test ok , deinit simple pair */
 		simple_pair_deinit();
