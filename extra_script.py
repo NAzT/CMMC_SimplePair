@@ -13,7 +13,7 @@ def before_upload(source, target, env):
 
 def after_upload(source, target, env):
     print "after_upload"
-    shutil.rmtree("lib-dev/CMMC_SimplePair")
+    # shutil.rmtree("lib-dev/CMMC_SimplePair")
 
 def before_build(source, target, env):
     print "before_build"
