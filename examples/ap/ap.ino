@@ -12,8 +12,22 @@ void setup()
   Serial.begin(115200);
   Serial.println("HELLO...");
 
-  instance.set_pair_key(key);
-  instance.begin(MODE_AP);
+  instance.begin(CSP_MODE_AP, key);
+  // instance.add_listener([](u8 *sa, u8 status) {
+  //     Serial.printf("[USER] event %d\r\n", status);
+  // });
+
+  instance.on(CSP_EVENT_SUCCESS, [](u8* sa, u8 status) {
+    instance.mode();
+    Serial.printf("[USER][EVENT_SUCCESS] %d\r\n", status);
+  });
+
+  instance.on(CSP_EVENT_ERROR, [](u8* sa, u8 status) {
+    Serial.printf("[USER][EVENT_ERROR] %d\r\n", status);
+  });
+
+  instance.start();
+
 }
 
 void loop()

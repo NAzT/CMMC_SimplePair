@@ -9,7 +9,7 @@ void setup()
   Serial.begin(115200);
   Serial.println("HELLO from STA");
 
-  instance.begin(MODE_STA);
+  instance.begin(CSP_MODE_STA);
 }
 
 void loop()

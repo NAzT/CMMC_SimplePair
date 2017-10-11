@@ -13,29 +13,40 @@ extern "C" {
 #endif
 
 enum CMMC_SimplePair_mode_t {
-    MODE_AP, MODE_STA
+    CSP_MODE_AP, CSP_MODE_STA
 };
+
+enum CMMC_SimplePair_event_t {
+    CSP_EVENT_SUCCESS, CSP_EVENT_ERROR
+};
+
 
 class CMMC_SimplePair
 {
   public:
       // constructure
       CMMC_SimplePair() {
-        u8 tmp[16] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-           0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f};
-        this->set_pair_key(tmp);
+        auto blank = [](u8* sa, u8 status) {};
+        this->_user_sp_callback = blank;
+        this->_user_sp_success_callback = blank;
+        this->_user_sp_error_callback = blank;
       }
-
       ~CMMC_SimplePair() {}
 
-      void setup();
-      void begin(CMMC_SimplePair_mode_t);
+      void begin(CMMC_SimplePair_mode_t, u8*);
+      void start();
       void mode(CMMC_SimplePair_mode_t);
+      int mode();
       void set_pair_key(u8 *);
+      void add_listener(simple_pair_status_cb_t);
+      void on(CMMC_SimplePair_event_t, simple_pair_status_cb_t);
   private:
-    CMMC_SimplePair_mode_t _mode;
-    simple_pair_status_cb_t _sp_callback;
     u8 tmp_key[16];
+    CMMC_SimplePair_mode_t _mode;
+    simple_pair_status_cb_t _sp_callback = NULL;
+    simple_pair_status_cb_t _user_sp_callback = NULL;
+    simple_pair_status_cb_t _user_sp_success_callback = NULL;
+    simple_pair_status_cb_t _user_sp_error_callback = NULL;
     void on_sp_st_finish(u8*);
     void on_sp_st_ap_recv_neg(u8*);
     void on_sp_st_wait_timeout(u8*);
