@@ -19,6 +19,10 @@ void setup()
 
   Serial.begin(115200);
 
+  instance.add_debug_listener([](const char* s) {
+    Serial.print("[USER]: ");
+    Serial.println(s);
+  });
   instance.begin(MASTER_MODE, key, evt_success, evt_error);
   instance.on(EVENT_SUCCESS, evt_success);
   instance.on(EVENT_ERROR,  evt_error);

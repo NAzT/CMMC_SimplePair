@@ -1,15 +1,15 @@
 #include "CMMC_SimplePair.h"
 
-void debug_cb(const char* str) {
-  Serial.print(str);
+void CMMC_SimplePair::debug_cb(const char* str) {
+  this->_user_debug_cb(str);
 }
 
 void show_key(u8 *buf, u8 len) {
-  char debug_buffer[120];
   u8 i;
   for (i = 0; i < len; i++)
-    sprintf(debug_buffer, "%02x,%s", buf[i], (i%16 == 15?"\n":" "));
-    debug_cb(debug_buffer);
+    Serial.printf("%02x,%s", buf[i], (i%16 == 15?"\n":" "));
+    // sprintf(debug_buffer, "%02x,%s", buf[i], (i%16 == 15?"\n":" "));
+    // debug_cb(debug_buffer);
 }
 
 void CMMC_SimplePair::mode(CMMC_SimplePair_mode_t mode) {
@@ -138,16 +138,16 @@ void CMMC_SimplePair::_simple_pair_init() {
                 bss_link->bssid[0], bss_link->bssid[1],
                 bss_link->bssid[2], bss_link->bssid[3],
                 bss_link->bssid[4], bss_link->bssid[5]);
-              debug_cb(_this->debug_buffer);
+              _this->debug_cb(_this->debug_buffer);
               simple_pair_set_peer_ref(bss_link->bssid, _this->tmp_key, NULL);
               ret = simple_pair_sta_start_negotiate();
               if (ret) {
                 sprintf(_this->debug_buffer, "Simple Pair: STA start NEG Failed\n");
-                debug_cb(_this->debug_buffer);
+                _this->debug_cb(_this->debug_buffer);
               }
               else {
                 sprintf(_this->debug_buffer, "Simple Pair: STA start NEG OK\n");
-                debug_cb(_this->debug_buffer);
+                _this->debug_cb(_this->debug_buffer);
               }
               break;
             }
@@ -157,7 +157,7 @@ void CMMC_SimplePair::_simple_pair_init() {
           }
         } else {
           sprintf(_this->debug_buffer, "err, scan status %d\n", status);
-          debug_cb(_this->debug_buffer);
+          _this->debug_cb(_this->debug_buffer);
         }
       });
     }
@@ -187,6 +187,13 @@ void CMMC_SimplePair::on_sp_st_op_error(u8* sa) { }
 void CMMC_SimplePair::on_sp_st_unknown_error(u8* sa) { }
 void CMMC_SimplePair::on_sp_st_max(u8* sa) { }
 
+
+void CMMC_SimplePair::add_debug_listener(cmmc_debug_cb_t cb) {
+  if (cb != NULL) {
+    this->_user_debug_cb = cb;
+  }
+}
+
 void CMMC_SimplePair::begin(CMMC_SimplePair_mode_t mode, u8 *key,
   simple_pair_status_cb_t succ_cb, cmmc_simple_pair_status_cb_t err_cb) {
     this->on(CSP_EVENT_SUCCESS, succ_cb);
@@ -199,8 +206,8 @@ void CMMC_SimplePair::begin(CMMC_SimplePair_mode_t mode, u8 *key) {
     this->set_pair_key(key);
     static CMMC_SimplePair* _this = this;
     this->_sp_callback = [](u8 *sa, u8 status) {
-        // sprintf(this->debug_buffer, "event %d\r\n", status);
-        debug_cb(_this->debug_buffer);
+        sprintf(_this->debug_buffer, "event %d\r\n", status);
+        _this->debug_cb(_this->debug_buffer);
         _this->_user_sp_callback(sa, status);
         switch (status) {
           case 0:

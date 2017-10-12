@@ -28,6 +28,7 @@ enum CMMC_SimplePair_event_t {
 #define EVENT_ERROR CSP_EVENT_ERROR
 
 typedef void (*cmmc_simple_pair_status_cb_t)(u8 *sa, u8 status, const char* cause);
+typedef void (*cmmc_debug_cb_t)(const char* cause);
 
 class CMMC_SimplePair
 {
@@ -40,6 +41,7 @@ class CMMC_SimplePair
         this->_user_sp_callback = blank;
         this->_user_sp_success_callback = blank;
         this->_user_sp_error_callback = cmmc_blank;
+        this->_user_debug_cb = [](const char* s) { };
       }
       ~CMMC_SimplePair() {}
 
@@ -51,6 +53,7 @@ class CMMC_SimplePair
       int mode();
       void set_pair_key(u8 *);
       void add_listener(simple_pair_status_cb_t);
+      void add_debug_listener(cmmc_debug_cb_t);
       void on(CMMC_SimplePair_event_t, simple_pair_status_cb_t);
       void on(CMMC_SimplePair_event_t, cmmc_simple_pair_status_cb_t);
   private:
@@ -61,6 +64,7 @@ class CMMC_SimplePair
       simple_pair_status_cb_t _user_sp_callback = NULL;
       simple_pair_status_cb_t _user_sp_success_callback = NULL;
       cmmc_simple_pair_status_cb_t _user_sp_error_callback = NULL;
+      cmmc_debug_cb_t _user_debug_cb;
       void on_sp_st_finish(u8*);
       void on_sp_st_ap_recv_neg(u8*);
       void on_sp_st_wait_timeout(u8*);
@@ -71,6 +75,8 @@ class CMMC_SimplePair
       void on_sp_st_unknown_error(u8*);
       void on_sp_st_max(u8*);
       void _simple_pair_init();
+      void debug_cb(const char*);
+
 };
 
 #endif //CMMC_SimplePair_H
