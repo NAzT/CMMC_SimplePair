@@ -17,12 +17,11 @@ void CMMC_SimplePair::set_message(u8 *tmp) {
 }
 
 void CMMC_SimplePair::on_sp_st_finish(u8* sa) {
-  if (this->_mode == CSP_SLAVE_MODE)
+  if (this->_mode == CSP_MODE_STA)
   {
     u8 ex_key[16];
     simple_pair_get_peer_ref(NULL, NULL, ex_key);
     this->debug_cb("Simple Pair: AP FINISH");
-    this->debug_cb("slave mac: ");
     _user_cmmc_sp_success_callback(sa, SP_ST_STA_FINISH, ex_key);
     /* if test ok , deinit simple pair */
     simple_pair_deinit();
@@ -57,7 +56,7 @@ void CMMC_SimplePair::_simple_pair_init() {
   int ret;
   static CMMC_SimplePair *_this = this;
 
-  if (this->_mode == CSP_MASTER_MODE) {
+  if (this->_mode == CSP_MODE_AP) {
     wifi_set_opmode(SOFTAP_MODE);
     /* init simple pair */
     ret = simple_pair_init();
@@ -84,7 +83,7 @@ void CMMC_SimplePair::_simple_pair_init() {
       }
     }
   }
-  else if (this->_mode == SLAVE_MODE) {
+  else if (this->_mode == CSP_MODE_STA) {
     wifi_set_opmode(STATION_MODE);
     /* init simple pair */
     ret = simple_pair_init();
@@ -116,9 +115,18 @@ void CMMC_SimplePair::_simple_pair_init() {
           _this->debug_cb("scan_done");
           struct bss_info *bss_link = (struct bss_info *)arg;
           while (bss_link != NULL) {
+            String ssid = String(reinterpret_cast<char*>(bss_link->ssid));
+            // String bssid = String(reinterpret_cast<char*>(bss_link->bssid));
+            String rssi = String(bss_link->rssi);
+            String auth_mode = String(bss_link->authmode);
+
+            sprintf(_this->debug_buffer, "%s (%s, %s)", ssid.c_str(),
+              rssi.c_str(), auth_mode.c_str());
+            _this->debug_cb(_this->debug_buffer);
+
             if (bss_link->simple_pair) {
               sprintf(_this->debug_buffer,
-                "Simple Pair: bssid %02x:%02x:%02x: %02x:%02x:%02x Ready!",
+                "Simple Pair: bssid %02x:%02x:%02x:%02x:%02x:%02x Ready!",
                 bss_link->bssid[0], bss_link->bssid[1],
                 bss_link->bssid[2], bss_link->bssid[3],
                 bss_link->bssid[4], bss_link->bssid[5]);
@@ -134,7 +142,7 @@ void CMMC_SimplePair::_simple_pair_init() {
               break;
             }
             // bss_link = bss_link->next->stqe_next;
-            _this->debug_cb("next...");
+            // _this->debug_cb("next...");
             bss_link = bss_link->next;
           }
         } else {
@@ -182,7 +190,9 @@ void CMMC_SimplePair::begin(CMMC_SimplePair_mode_t mode, u8 *pairkey, u8 *msg,
 void CMMC_SimplePair::begin(CMMC_SimplePair_mode_t mode, u8 *pairkey, u8 *msg) {
     this->mode(mode);
     this->set_pair_key(pairkey);
-    this->set_message(msg);
+    if (mode == CSP_MODE_AP) {
+      this->set_message(msg);
+    }
     static CMMC_SimplePair* _this = this;
     this->_sp_callback = [](u8 *sa, u8 status) {
         sprintf(_this->debug_buffer, "event %d", status);

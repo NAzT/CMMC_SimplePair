@@ -13,7 +13,7 @@ extern "C" {
 #endif
 
 enum CMMC_SimplePair_mode_t {
-    CSP_MASTER_MODE, CSP_SLAVE_MODE
+    CSP_MODE_AP, CSP_MODE_STA
 };
 enum CMMC_SimplePair_event_t {
     CSP_EVENT_SUCCESS, CSP_EVENT_ERROR
@@ -22,8 +22,8 @@ enum CMMC_SimplePair_event_t {
 #ifndef CSP_DEBUG_BUFFER
   #define CSP_DEBUG_BUFFER 120
 #endif
-#define MASTER_MODE CSP_MASTER_MODE
-#define SLAVE_MODE CSP_SLAVE_MODE
+#define MASTER_MODE CSP_MODE_AP
+#define SLAVE_MODE CSP_MODE_STA
 #define EVENT_SUCCESS CSP_EVENT_SUCCESS
 #define EVENT_ERROR CSP_EVENT_ERROR
 
@@ -47,8 +47,8 @@ class CMMC_SimplePair
       }
       ~CMMC_SimplePair() {}
 
-      void begin(CMMC_SimplePair_mode_t, u8*, u8*);
-      void begin(CMMC_SimplePair_mode_t, u8*, u8*,
+      void begin(CMMC_SimplePair_mode_t, u8* pairkey, u8* message = NULL);
+      void begin(CMMC_SimplePair_mode_t, u8* pairkey, u8* message,
           cmmc_simple_pair_succ_status_t, cmmc_simple_pair_err_status_t);
       void start();
       void mode(CMMC_SimplePair_mode_t);
