@@ -19,6 +19,9 @@ enum CMMC_SimplePair_event_t {
     CSP_EVENT_SUCCESS, CSP_EVENT_ERROR
 };
 
+#ifndef CSP_DEBUG_BUFFER
+  #define CSP_DEBUG_BUFFER 120
+#endif
 #define MASTER_MODE CSP_MASTER_MODE
 #define SLAVE_MODE CSP_SLAVE_MODE
 #define EVENT_SUCCESS CSP_EVENT_SUCCESS
@@ -51,22 +54,23 @@ class CMMC_SimplePair
       void on(CMMC_SimplePair_event_t, simple_pair_status_cb_t);
       void on(CMMC_SimplePair_event_t, cmmc_simple_pair_status_cb_t);
   private:
-    u8 tmp_key[16];
-    CMMC_SimplePair_mode_t _mode;
-    simple_pair_status_cb_t _sp_callback = NULL;
-    simple_pair_status_cb_t _user_sp_callback = NULL;
-    simple_pair_status_cb_t _user_sp_success_callback = NULL;
-    cmmc_simple_pair_status_cb_t _user_sp_error_callback = NULL;
-    void on_sp_st_finish(u8*);
-    void on_sp_st_ap_recv_neg(u8*);
-    void on_sp_st_wait_timeout(u8*);
-    void on_sp_st_send_error(u8*);
-    void on_sp_st_key_install_err(u8*);
-    void on_sp_st_key_overlap_err(u8*);
-    void on_sp_st_op_error(u8*);
-    void on_sp_st_unknown_error(u8*);
-    void on_sp_st_max(u8*);
-    void _simple_pair_init();
+      char debug_buffer[CSP_DEBUG_BUFFER];
+      u8 tmp_key[16];
+      CMMC_SimplePair_mode_t _mode;
+      simple_pair_status_cb_t _sp_callback = NULL;
+      simple_pair_status_cb_t _user_sp_callback = NULL;
+      simple_pair_status_cb_t _user_sp_success_callback = NULL;
+      cmmc_simple_pair_status_cb_t _user_sp_error_callback = NULL;
+      void on_sp_st_finish(u8*);
+      void on_sp_st_ap_recv_neg(u8*);
+      void on_sp_st_wait_timeout(u8*);
+      void on_sp_st_send_error(u8*);
+      void on_sp_st_key_install_err(u8*);
+      void on_sp_st_key_overlap_err(u8*);
+      void on_sp_st_op_error(u8*);
+      void on_sp_st_unknown_error(u8*);
+      void on_sp_st_max(u8*);
+      void _simple_pair_init();
 };
 
 #endif //CMMC_SimplePair_H

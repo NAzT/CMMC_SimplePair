@@ -1,9 +1,15 @@
 #include "CMMC_SimplePair.h"
 
+void debug_cb(const char* str) {
+  Serial.print(str);
+}
+
 void show_key(u8 *buf, u8 len) {
+  char debug_buffer[120];
   u8 i;
   for (i = 0; i < len; i++)
-    Serial.printf("%02x,%s", buf[i], (i%16 == 15?"\n":" "));
+    sprintf(debug_buffer, "%02x,%s", buf[i], (i%16 == 15?"\n":" "));
+    debug_cb(debug_buffer);
 }
 
 void CMMC_SimplePair::mode(CMMC_SimplePair_mode_t mode) {
@@ -19,11 +25,14 @@ void CMMC_SimplePair::on_sp_st_finish(u8* sa) {
   {
     u8 ex_key[16];
     simple_pair_get_peer_ref(NULL, NULL, ex_key);
-    Serial.printf("Simple Pair: AP FINISH\n");
-    Serial.printf("slave mac: \n");
+    sprintf(this->debug_buffer, "Simple Pair: AP FINISH\n");
+    debug_cb(this->debug_buffer);
+    sprintf(this->debug_buffer, "slave mac: \n");
+    debug_cb(this->debug_buffer);
     show_key(sa, 6);
     Serial.println();
-    Serial.printf("exkey: \n");
+    sprintf(this->debug_buffer, "exkey: \n");
+    debug_cb(this->debug_buffer);
     show_key(ex_key, 16);
     Serial.println();
 
@@ -34,7 +43,8 @@ void CMMC_SimplePair::on_sp_st_finish(u8* sa) {
   {
     u8 ex_key[16];
     simple_pair_get_peer_ref(NULL, NULL, ex_key);
-    Serial.printf("Simple Pair: STA FINISH, Ex_key ");
+    sprintf(this->debug_buffer, "Simple Pair: STA FINISH, Ex_key ");
+    debug_cb(this->debug_buffer);
     show_key(ex_key, 16);
     simple_pair_deinit();
   }
@@ -65,21 +75,25 @@ void CMMC_SimplePair::_simple_pair_init() {
     /* init simple pair */
     ret = simple_pair_init();
     if (ret) {
-      Serial.printf("Simple Pair: init error, %d\n", ret);
+      sprintf(this->debug_buffer, "Simple Pair: init error, %d\n", ret);
+      debug_cb(this->debug_buffer);
       return;
     }
     /* register simple pair status callback function */
     ret = register_simple_pair_status_cb(this->_sp_callback);
     if (ret) {
-      Serial.printf("Simple Pair: register status cb error, %d\n", ret);
+      sprintf(this->debug_buffer, "Simple Pair: register status cb error, %d\n", ret);
+      debug_cb(this->debug_buffer);
       return;
     }
     else {
-      Serial.printf("Simple Pair: AP Enter Announce Mode ...\n");
+      sprintf(this->debug_buffer, "Simple Pair: AP Enter Announce Mode ...\n");
+      debug_cb(this->debug_buffer);
       /* ap must enter announce mode , so the sta can know which ap is ready to simple pair */
       ret = simple_pair_ap_enter_announce_mode();
       if (ret) {
-        Serial.printf("Simple Pair: AP Enter Announce Mode Error, %d\n", ret);
+        sprintf(this->debug_buffer, "Simple Pair: AP Enter Announce Mode Error, %d\n", ret);
+        debug_cb(this->debug_buffer);
         return;
       }
     }
@@ -89,24 +103,29 @@ void CMMC_SimplePair::_simple_pair_init() {
     /* init simple pair */
     ret = simple_pair_init();
     if (ret) {
-      Serial.printf("Simple Pair: init error, %d\n", ret);
+      sprintf(this->debug_buffer, "Simple Pair: init error, %d\n", ret);
+      debug_cb(this->debug_buffer);
       return;
     }
     /* register simple pair status callback function */
     ret = register_simple_pair_status_cb(this->_sp_callback);
     if (ret) {
-      Serial.printf("Simple Pair: register status cb error, %d\n", ret);
+      sprintf(this->debug_buffer, "Simple Pair: register status cb error, %d\n", ret);
+      debug_cb(this->debug_buffer);
       return;
     }
 
-    Serial.printf("Simple Pair: STA Enter Scan Mode ...\n");
+    sprintf(this->debug_buffer, "Simple Pair: STA Enter Scan Mode ...\n");
+    debug_cb(this->debug_buffer);
     ret = simple_pair_sta_enter_scan_mode();
     if (ret) {
-      Serial.printf("Simple Pair: STA Enter Scan Mode Error, %d\n", ret);
+      sprintf(this->debug_buffer, "Simple Pair: STA Enter Scan Mode Error, %d\n", ret);
+      debug_cb(this->debug_buffer);
       return;
     } else {
       /* scan ap to searh which ap is ready to simple pair */
-      Serial.printf("Simple Pair: STA Scan AP ...\n");
+      sprintf(this->debug_buffer, "Simple Pair: STA Scan AP ...\n");
+      debug_cb(this->debug_buffer);
       wifi_station_scan(NULL, [](void *arg, STATUS status) {
         int ret;
         if (status == OK) {
@@ -114,15 +133,22 @@ void CMMC_SimplePair::_simple_pair_init() {
           struct bss_info *bss_link = (struct bss_info *)arg;
           while (bss_link != NULL) {
             if (bss_link->simple_pair) {
-              Serial.printf("Simple Pair: bssid %02x:%02x:%02x:%02x:%02x:%02x Ready!\n",
-                            bss_link->bssid[0], bss_link->bssid[1], bss_link->bssid[2],
-                            bss_link->bssid[3], bss_link->bssid[4], bss_link->bssid[5]);
+              sprintf(_this->debug_buffer,
+                "Simple Pair: bssid %02x:%02x:%02x: %02x:%02x:%02x Ready!\n",
+                bss_link->bssid[0], bss_link->bssid[1],
+                bss_link->bssid[2], bss_link->bssid[3],
+                bss_link->bssid[4], bss_link->bssid[5]);
+              debug_cb(_this->debug_buffer);
               simple_pair_set_peer_ref(bss_link->bssid, _this->tmp_key, NULL);
               ret = simple_pair_sta_start_negotiate();
-              if (ret)
-                Serial.printf("Simple Pair: STA start NEG Failed\n");
-              else
-                Serial.printf("Simple Pair: STA start NEG OK\n");
+              if (ret) {
+                sprintf(_this->debug_buffer, "Simple Pair: STA start NEG Failed\n");
+                debug_cb(_this->debug_buffer);
+              }
+              else {
+                sprintf(_this->debug_buffer, "Simple Pair: STA start NEG OK\n");
+                debug_cb(_this->debug_buffer);
+              }
               break;
             }
             // bss_link = bss_link->next->stqe_next;
@@ -130,7 +156,8 @@ void CMMC_SimplePair::_simple_pair_init() {
             bss_link = bss_link->next;
           }
         } else {
-          Serial.printf("err, scan status %d\n", status);
+          sprintf(_this->debug_buffer, "err, scan status %d\n", status);
+          debug_cb(_this->debug_buffer);
         }
       });
     }
@@ -142,7 +169,8 @@ void CMMC_SimplePair::_simple_pair_init() {
 
 void CMMC_SimplePair::on_sp_st_ap_recv_neg(u8* sa) {
   /* AP recv a STA's negotiate request */
-  Serial.printf("Simple Pair: Recv STA Negotiate Request\n");
+  sprintf(this->debug_buffer, "Simple Pair: Recv STA Negotiate Request\n");
+  debug_cb(this->debug_buffer);
 
   /* set peer must be called, because the simple pair need to know what peer mac is */
   u8 ex_key[16] = { 0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04,
@@ -171,7 +199,8 @@ void CMMC_SimplePair::begin(CMMC_SimplePair_mode_t mode, u8 *key) {
     this->set_pair_key(key);
     static CMMC_SimplePair* _this = this;
     this->_sp_callback = [](u8 *sa, u8 status) {
-        // Serial.printf("event %d\r\n", status);
+        // sprintf(this->debug_buffer, "event %d\r\n", status);
+        debug_cb(_this->debug_buffer);
         _this->_user_sp_callback(sa, status);
         switch (status) {
           case 0:
