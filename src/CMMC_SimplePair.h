@@ -47,20 +47,22 @@ class CMMC_SimplePair
       }
       ~CMMC_SimplePair() {}
 
-      void begin(CMMC_SimplePair_mode_t, u8*);
-      void begin(CMMC_SimplePair_mode_t, u8*,
-        cmmc_simple_pair_succ_status_t, cmmc_simple_pair_err_status_t);
+      void begin(CMMC_SimplePair_mode_t, u8*, u8*);
+      void begin(CMMC_SimplePair_mode_t, u8*, u8*,
+          cmmc_simple_pair_succ_status_t, cmmc_simple_pair_err_status_t);
       void start();
       void mode(CMMC_SimplePair_mode_t);
       int mode();
       void set_pair_key(u8 *);
+      void set_message(u8 *);
       void add_listener(simple_pair_status_cb_t);
       void add_debug_listener(cmmc_debug_cb_t);
       void on(CMMC_SimplePair_event_t, cmmc_simple_pair_succ_status_t);
       void on(CMMC_SimplePair_event_t, cmmc_simple_pair_err_status_t);
   private:
       char debug_buffer[CSP_DEBUG_BUFFER];
-      u8 tmp_key[16];
+      u8 _pair_key[16];
+      u8 _message[16];
       CMMC_SimplePair_mode_t _mode;
       simple_pair_status_cb_t _sp_callback = NULL;
       simple_pair_status_cb_t _user_sp_callback = NULL;

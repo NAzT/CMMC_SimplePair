@@ -3,21 +3,17 @@
 void CMMC_SimplePair::debug_cb(const char* str) {
   this->_user_debug_cb(str);
 }
-// 
-// void show_key(u8 *buf, u8 len) {
-//   u8 i;
-//   for (i = 0; i < len; i++)
-//     Serial.printf("%02x,%s", buf[i], (i%16 == 15?"\n":" "));
-//     // sprintf(debug_buffer, "%02x,%s", buf[i], (i%16 == 15?"\n":" "));
-//     // debug_cb(debug_buffer);
-// }
 
 void CMMC_SimplePair::mode(CMMC_SimplePair_mode_t mode) {
   this->_mode = mode;
 }
 
 void CMMC_SimplePair::set_pair_key(u8 *tmp) {
-  memcpy(this->tmp_key, tmp, 16);
+  memcpy(this->_pair_key, tmp, 16);
+}
+
+void CMMC_SimplePair::set_message(u8 *tmp) {
+  memcpy(this->_message, tmp, 16);
 }
 
 void CMMC_SimplePair::on_sp_st_finish(u8* sa) {
@@ -27,9 +23,6 @@ void CMMC_SimplePair::on_sp_st_finish(u8* sa) {
     simple_pair_get_peer_ref(NULL, NULL, ex_key);
     this->debug_cb("Simple Pair: AP FINISH");
     this->debug_cb("slave mac: ");
-    // show_key(sa, 6);
-    // this->debug_cb("\nexkey: ");
-    // show_key(ex_key, 16);
     _user_cmmc_sp_success_callback(sa, SP_ST_STA_FINISH, ex_key);
     /* if test ok , deinit simple pair */
     simple_pair_deinit();
@@ -39,7 +32,6 @@ void CMMC_SimplePair::on_sp_st_finish(u8* sa) {
     u8 ex_key[16];
     simple_pair_get_peer_ref(NULL, NULL, ex_key);
     this->debug_cb("Simple Pair: STA FINISH, Ex_key ");
-    // show_key(ex_key, 16);
     _user_cmmc_sp_success_callback(sa, SP_ST_AP_FINISH, ex_key);
     simple_pair_deinit();
   }
@@ -108,7 +100,6 @@ void CMMC_SimplePair::_simple_pair_init() {
       debug_cb(this->debug_buffer);
       return;
     }
-
     this->debug_cb("Simple Pair: STA Enter Scan Mode ...");
     ret = simple_pair_sta_enter_scan_mode();
     if (ret) {
@@ -132,7 +123,7 @@ void CMMC_SimplePair::_simple_pair_init() {
                 bss_link->bssid[2], bss_link->bssid[3],
                 bss_link->bssid[4], bss_link->bssid[5]);
               _this->debug_cb(_this->debug_buffer);
-              simple_pair_set_peer_ref(bss_link->bssid, _this->tmp_key, NULL);
+              simple_pair_set_peer_ref(bss_link->bssid, _this->_pair_key, NULL);
               ret = simple_pair_sta_start_negotiate();
               if (ret) {
                 _this->debug_cb("Simple Pair: STA start NEG Failed");
@@ -161,12 +152,10 @@ void CMMC_SimplePair::_simple_pair_init() {
 void CMMC_SimplePair::on_sp_st_ap_recv_neg(u8* sa) {
   /* AP recv a STA's negotiate request */
   this->debug_cb("Simple Pair: Recv STA Negotiate Request");
-
-  /* set peer must be called, because the simple pair need to know what peer mac is */
-  u8 ex_key[16] = { 0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04,
-    0x01, 0x02, 0x03, 0x04, 0xFF, 0xFF, 0xFF, 0xFF };
-  simple_pair_set_peer_ref(sa, this->tmp_key, ex_key);
+  simple_pair_set_peer_ref(sa, this->_pair_key, this->_message);
+  // check for negotiate
   simple_pair_ap_start_negotiate();
+  // simple_pair_ap_refuse_negotiate();
 }
 
 void CMMC_SimplePair::on_sp_st_wait_timeout(u8* sa) { }
@@ -177,23 +166,23 @@ void CMMC_SimplePair::on_sp_st_op_error(u8* sa) { }
 void CMMC_SimplePair::on_sp_st_unknown_error(u8* sa) { }
 void CMMC_SimplePair::on_sp_st_max(u8* sa) { }
 
-
 void CMMC_SimplePair::add_debug_listener(cmmc_debug_cb_t cb) {
   if (cb != NULL) {
     this->_user_debug_cb = cb;
   }
 }
 
-void CMMC_SimplePair::begin(CMMC_SimplePair_mode_t mode, u8 *key,
+void CMMC_SimplePair::begin(CMMC_SimplePair_mode_t mode, u8 *pairkey, u8 *msg,
   cmmc_simple_pair_succ_status_t succ_cb, cmmc_simple_pair_err_status_t err_cb) {
     this->on(CSP_EVENT_SUCCESS, succ_cb);
     this->on(CSP_EVENT_ERROR, err_cb);
-    this->begin(mode, key);
+    this->begin(mode, pairkey, msg);
 }
 
-void CMMC_SimplePair::begin(CMMC_SimplePair_mode_t mode, u8 *key) {
+void CMMC_SimplePair::begin(CMMC_SimplePair_mode_t mode, u8 *pairkey, u8 *msg) {
     this->mode(mode);
-    this->set_pair_key(key);
+    this->set_pair_key(pairkey);
+    this->set_message(msg);
     static CMMC_SimplePair* _this = this;
     this->_sp_callback = [](u8 *sa, u8 status) {
         sprintf(_this->debug_buffer, "event %d", status);
