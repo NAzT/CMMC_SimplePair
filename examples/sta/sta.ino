@@ -4,18 +4,20 @@
 
 CMMC_SimplePair instance;
 
+void dump(const u8* data, size_t size) {
+  for (size_t i = 0; i < size-1; i++) {
+    Serial.printf("%02x ", data[i]);
+  }
+  Serial.printf("%02x", data[size-1]);
+  Serial.println();
+}
+
 void evt_success(u8* sa, u8 status, const u8* key) {
   Serial.printf("[CSP_EVENT_SUCCESS] STATUS: %d\r\n", status);
   Serial.printf("WITH KEY: ");
-  for (size_t i = 0; i < 16; i++) {
-    Serial.printf("%02x ", key[i]);
-  }
-  Serial.println();
+  dump(key, 16);
   Serial.printf("WITH MAC: ");
-  for (size_t i = 0; i < 6; i++) {
-    Serial.printf("%02x ", sa[i]);
-  }
-  Serial.println();
+  dump(sa, 6);
 }
 
 void evt_error(u8* sa, u8 status, const char* cause) {
@@ -26,7 +28,6 @@ void evt_error(u8* sa, u8 status, const char* cause) {
 void setup()
 {
   Serial.begin(115200);
-  Serial.println("HELLO from STA");
   u8 pair_key[16] = {0x09, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
      0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f};
 
