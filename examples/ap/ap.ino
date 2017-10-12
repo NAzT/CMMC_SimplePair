@@ -4,8 +4,11 @@
 
 CMMC_SimplePair instance;
 
-void evt_success(u8* sa, u8 status) {
-  Serial.printf("[CSP_EVENT_SUCCESS] %d\r\n", status);
+void evt_success(u8* sa, u8 status, const u8* key) {
+  Serial.printf("[CSP_EVENT_SUCCESS] STATUS: %d WITH KEY => \r\n", status);
+  for (size_t i = 0; i < 16; i++) {
+    Serial.printf("%02x ", key[i]);
+  }
 }
 
 void evt_error(u8* sa, u8 status, const char* cause) {
@@ -21,15 +24,13 @@ void setup()
   Serial.println();
   Serial.println();
 
-  instance.add_debug_listener([](const char* s) {
-    Serial.print("[USER]: ");
-    Serial.println(s);
-  });
   instance.begin(MASTER_MODE, key, evt_success, evt_error);
   instance.on(EVENT_SUCCESS, evt_success);
   instance.on(EVENT_ERROR,  evt_error);
+  instance.add_debug_listener([](const char* s) {
+    Serial.printf("[USER]: %s\r\n", s);
+  });
   instance.start();
-
 }
 
 void loop()

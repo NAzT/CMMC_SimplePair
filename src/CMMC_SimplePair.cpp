@@ -3,14 +3,14 @@
 void CMMC_SimplePair::debug_cb(const char* str) {
   this->_user_debug_cb(str);
 }
-
-void show_key(u8 *buf, u8 len) {
-  u8 i;
-  for (i = 0; i < len; i++)
-    Serial.printf("%02x,%s", buf[i], (i%16 == 15?"\n":" "));
-    // sprintf(debug_buffer, "%02x,%s", buf[i], (i%16 == 15?"\n":" "));
-    // debug_cb(debug_buffer);
-}
+// 
+// void show_key(u8 *buf, u8 len) {
+//   u8 i;
+//   for (i = 0; i < len; i++)
+//     Serial.printf("%02x,%s", buf[i], (i%16 == 15?"\n":" "));
+//     // sprintf(debug_buffer, "%02x,%s", buf[i], (i%16 == 15?"\n":" "));
+//     // debug_cb(debug_buffer);
+// }
 
 void CMMC_SimplePair::mode(CMMC_SimplePair_mode_t mode) {
   this->_mode = mode;
@@ -27,10 +27,10 @@ void CMMC_SimplePair::on_sp_st_finish(u8* sa) {
     simple_pair_get_peer_ref(NULL, NULL, ex_key);
     this->debug_cb("Simple Pair: AP FINISH");
     this->debug_cb("slave mac: ");
-    show_key(sa, 6);
-    this->debug_cb("\nexkey: ");
-    show_key(ex_key, 16);
-
+    // show_key(sa, 6);
+    // this->debug_cb("\nexkey: ");
+    // show_key(ex_key, 16);
+    _user_cmmc_sp_success_callback(sa, SP_ST_STA_FINISH, ex_key);
     /* if test ok , deinit simple pair */
     simple_pair_deinit();
   }
@@ -39,7 +39,8 @@ void CMMC_SimplePair::on_sp_st_finish(u8* sa) {
     u8 ex_key[16];
     simple_pair_get_peer_ref(NULL, NULL, ex_key);
     this->debug_cb("Simple Pair: STA FINISH, Ex_key ");
-    show_key(ex_key, 16);
+    // show_key(ex_key, 16);
+    _user_cmmc_sp_success_callback(sa, SP_ST_AP_FINISH, ex_key);
     simple_pair_deinit();
   }
 }
@@ -48,15 +49,15 @@ int CMMC_SimplePair::mode() {
   return this->_mode;
 }
 
-void CMMC_SimplePair::on(CMMC_SimplePair_event_t evt, simple_pair_status_cb_t cb) {
+void CMMC_SimplePair::on(CMMC_SimplePair_event_t evt, cmmc_simple_pair_succ_status_t cb) {
   if (evt == CSP_EVENT_SUCCESS && cb != NULL) {
-    this->_user_sp_success_callback = cb;
+    this->_user_cmmc_sp_success_callback = cb;
   }
 }
 
-void CMMC_SimplePair::on(CMMC_SimplePair_event_t evt, cmmc_simple_pair_status_cb_t cb) {
+void CMMC_SimplePair::on(CMMC_SimplePair_event_t evt, cmmc_simple_pair_err_status_t cb) {
   if (evt == CSP_EVENT_ERROR && cb != NULL) {
-    this->_user_sp_error_callback = cb;
+    this->_user_cmmc_sp_error_callback = cb;
   }
 }
 
@@ -121,7 +122,7 @@ void CMMC_SimplePair::_simple_pair_init() {
       wifi_station_scan(NULL, [](void *arg, STATUS status) {
         int ret;
         if (status == OK) {
-          Serial.println("scan_done");
+          _this->debug_cb("scan_done");
           struct bss_info *bss_link = (struct bss_info *)arg;
           while (bss_link != NULL) {
             if (bss_link->simple_pair) {
@@ -153,7 +154,7 @@ void CMMC_SimplePair::_simple_pair_init() {
     }
   }
   else {
-
+    // mode is neither master-mode or slave-mode
   }
 }
 
@@ -184,7 +185,7 @@ void CMMC_SimplePair::add_debug_listener(cmmc_debug_cb_t cb) {
 }
 
 void CMMC_SimplePair::begin(CMMC_SimplePair_mode_t mode, u8 *key,
-  simple_pair_status_cb_t succ_cb, cmmc_simple_pair_status_cb_t err_cb) {
+  cmmc_simple_pair_succ_status_t succ_cb, cmmc_simple_pair_err_status_t err_cb) {
     this->on(CSP_EVENT_SUCCESS, succ_cb);
     this->on(CSP_EVENT_ERROR, err_cb);
     this->begin(mode, key);
@@ -201,42 +202,41 @@ void CMMC_SimplePair::begin(CMMC_SimplePair_mode_t mode, u8 *key) {
         switch (status) {
           case 0:
             _this->on_sp_st_finish(sa);
-            _this->_user_sp_success_callback(sa, status);
             break;
           case SP_ST_AP_RECV_NEG:
             _this->on_sp_st_ap_recv_neg(sa);
             break;
           case SP_ST_WAIT_TIMEOUT:
             _this->on_sp_st_wait_timeout(sa);
-            _this->_user_sp_error_callback(sa, status, "SP_ST_WAIT_TIMEOUT");
+            _this->_user_cmmc_sp_error_callback(sa, status, "SP_ST_WAIT_TIMEOUT");
             break;
           case SP_ST_SEND_ERROR:
             _this->on_sp_st_send_error(sa);
-            _this->_user_sp_error_callback(sa, status, "SP_ST_SEND_ERROR");
+            _this->_user_cmmc_sp_error_callback(sa, status, "SP_ST_SEND_ERROR");
             break;
           case SP_ST_KEY_INSTALL_ERR:
             _this->on_sp_st_key_install_err(sa);
-            _this->_user_sp_error_callback(sa, status, "SP_ST_KEY_INSTALL_ERR");
+            _this->_user_cmmc_sp_error_callback(sa, status, "SP_ST_KEY_INSTALL_ERR");
             break;
           case SP_ST_KEY_OVERLAP_ERR:
             _this->on_sp_st_key_overlap_err(sa);
-            _this->_user_sp_error_callback(sa, status, "SP_ST_KEY_OVERLAP_ERR");
+            _this->_user_cmmc_sp_error_callback(sa, status, "SP_ST_KEY_OVERLAP_ERR");
             break;
           case SP_ST_OP_ERROR:
             _this->on_sp_st_op_error(sa);
-            _this->_user_sp_error_callback(sa, status, "SP_ST_OP_ERROR");
+            _this->_user_cmmc_sp_error_callback(sa, status, "SP_ST_OP_ERROR");
             break;
           case SP_ST_UNKNOWN_ERROR:
             _this->on_sp_st_unknown_error(sa);
-            _this->_user_sp_error_callback(sa, status, "SP_ST_UNKNOWN_ERROR");
+            _this->_user_cmmc_sp_error_callback(sa, status, "SP_ST_UNKNOWN_ERROR");
             break;
           case SP_ST_MAX:
             _this->on_sp_st_max(sa);
-            _this->_user_sp_error_callback(sa, status, "SP_ST_MAX");
+            _this->_user_cmmc_sp_error_callback(sa, status, "SP_ST_MAX");
             break;
           default:
             _this->on_sp_st_unknown_error(sa);
-            _this->_user_sp_error_callback(sa, status, "SP_ST_UNKNOWN_ERROR");
+            _this->_user_cmmc_sp_error_callback(sa, status, "SP_ST_UNKNOWN_ERROR");
               break;
           }
     };
