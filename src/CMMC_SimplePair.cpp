@@ -25,16 +25,11 @@ void CMMC_SimplePair::on_sp_st_finish(u8* sa) {
   {
     u8 ex_key[16];
     simple_pair_get_peer_ref(NULL, NULL, ex_key);
-    sprintf(this->debug_buffer, "Simple Pair: AP FINISH");
-    debug_cb(this->debug_buffer);
-    sprintf(this->debug_buffer, "slave mac: ");
-    debug_cb(this->debug_buffer);
+    this->debug_cb("Simple Pair: AP FINISH");
+    this->debug_cb("slave mac: ");
     show_key(sa, 6);
-    Serial.println();
-    sprintf(this->debug_buffer, "exkey: ");
-    debug_cb(this->debug_buffer);
+    this->debug_cb("\nexkey: ");
     show_key(ex_key, 16);
-    Serial.println();
 
     /* if test ok , deinit simple pair */
     simple_pair_deinit();
@@ -43,8 +38,7 @@ void CMMC_SimplePair::on_sp_st_finish(u8* sa) {
   {
     u8 ex_key[16];
     simple_pair_get_peer_ref(NULL, NULL, ex_key);
-    sprintf(this->debug_buffer, "Simple Pair: STA FINISH, Ex_key ");
-    debug_cb(this->debug_buffer);
+    this->debug_cb("Simple Pair: STA FINISH, Ex_key ");
     show_key(ex_key, 16);
     simple_pair_deinit();
   }
@@ -87,8 +81,7 @@ void CMMC_SimplePair::_simple_pair_init() {
       return;
     }
     else {
-      sprintf(this->debug_buffer, "Simple Pair: AP Enter Announce Mode ...");
-      debug_cb(this->debug_buffer);
+      this->debug_cb("Simple Pair: AP Enter Announce Mode ...");
       /* ap must enter announce mode , so the sta can know which ap is ready to simple pair */
       ret = simple_pair_ap_enter_announce_mode();
       if (ret) {
@@ -115,8 +108,7 @@ void CMMC_SimplePair::_simple_pair_init() {
       return;
     }
 
-    sprintf(this->debug_buffer, "Simple Pair: STA Enter Scan Mode ...");
-    debug_cb(this->debug_buffer);
+    this->debug_cb("Simple Pair: STA Enter Scan Mode ...");
     ret = simple_pair_sta_enter_scan_mode();
     if (ret) {
       sprintf(this->debug_buffer, "Simple Pair: STA Enter Scan Mode Error, %d", ret);
@@ -142,17 +134,15 @@ void CMMC_SimplePair::_simple_pair_init() {
               simple_pair_set_peer_ref(bss_link->bssid, _this->tmp_key, NULL);
               ret = simple_pair_sta_start_negotiate();
               if (ret) {
-                sprintf(_this->debug_buffer, "Simple Pair: STA start NEG Failed");
-                _this->debug_cb(_this->debug_buffer);
+                _this->debug_cb("Simple Pair: STA start NEG Failed");
               }
               else {
-                sprintf(_this->debug_buffer, "Simple Pair: STA start NEG OK");
-                _this->debug_cb(_this->debug_buffer);
+                _this->debug_cb("Simple Pair: STA start NEG OK");
               }
               break;
             }
             // bss_link = bss_link->next->stqe_next;
-            Serial.println("next...");
+            _this->debug_cb("next...");
             bss_link = bss_link->next;
           }
         } else {
@@ -169,8 +159,7 @@ void CMMC_SimplePair::_simple_pair_init() {
 
 void CMMC_SimplePair::on_sp_st_ap_recv_neg(u8* sa) {
   /* AP recv a STA's negotiate request */
-  sprintf(this->debug_buffer, "Simple Pair: Recv STA Negotiate Request");
-  debug_cb(this->debug_buffer);
+  this->debug_cb("Simple Pair: Recv STA Negotiate Request");
 
   /* set peer must be called, because the simple pair need to know what peer mac is */
   u8 ex_key[16] = { 0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04,
