@@ -14,10 +14,8 @@ void dump(const u8* data, size_t size) {
 
 void evt_success(u8* sa, u8 status, const u8* key) {
   Serial.printf("[CSP_EVENT_SUCCESS] STATUS: %d\r\n", status);
-  Serial.printf("WITH KEY: ");
-  dump(key, 16);
-  Serial.printf("WITH MAC: ");
-  dump(sa, 6);
+  Serial.printf("WITH KEY: "); dump(key, 16);
+  Serial.printf("WITH MAC: "); dump(sa, 6);
 }
 
 void evt_error(u8* sa, u8 status, const char* cause) {

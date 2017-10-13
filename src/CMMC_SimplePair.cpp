@@ -17,12 +17,12 @@ void CMMC_SimplePair::set_message(u8 *tmp) {
 }
 
 void CMMC_SimplePair::on_sp_st_finish(u8* sa) {
-  if (this->_mode == CSP_MODE_STA)
+  if (this->_mode == CSP_MODE_AP)
   {
     u8 ex_key[16];
     simple_pair_get_peer_ref(NULL, NULL, ex_key);
     this->debug_cb("Simple Pair: AP FINISH");
-    _user_cmmc_sp_success_callback(sa, SP_ST_STA_FINISH, ex_key);
+    _user_cmmc_sp_success_callback(sa, SP_ST_AP_FINISH, ex_key);
     /* if test ok , deinit simple pair */
     simple_pair_deinit();
   }
@@ -30,8 +30,8 @@ void CMMC_SimplePair::on_sp_st_finish(u8* sa) {
   {
     u8 ex_key[16];
     simple_pair_get_peer_ref(NULL, NULL, ex_key);
-    this->debug_cb("Simple Pair: STA FINISH, Ex_key ");
-    _user_cmmc_sp_success_callback(sa, SP_ST_AP_FINISH, ex_key);
+    this->debug_cb("Simple Pair: STA FINISH");
+    _user_cmmc_sp_success_callback(sa, SP_ST_STA_FINISH, ex_key);
     simple_pair_deinit();
   }
 }
@@ -142,7 +142,7 @@ void CMMC_SimplePair::_simple_pair_init() {
               break;
             }
             // bss_link = bss_link->next->stqe_next;
-            // _this->debug_cb("next...");
+            _this->debug_cb("next...");
             bss_link = bss_link->next;
           }
         } else {
