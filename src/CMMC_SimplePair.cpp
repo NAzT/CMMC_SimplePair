@@ -188,6 +188,11 @@ void CMMC_SimplePair::begin(CMMC_SimplePair_mode_t mode, u8 *pairkey, u8 *msg,
 }
 
 void CMMC_SimplePair::begin(CMMC_SimplePair_mode_t mode, u8 *pairkey, u8 *msg) {
+  WiFi.disconnect(0);
+  delay(100);
+  WiFi.mode(WIFI_STA);
+  delay(100);
+
     this->mode(mode);
     this->set_pair_key(pairkey);
     if (mode == CSP_MODE_AP) {
