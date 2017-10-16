@@ -206,7 +206,6 @@ void CMMC_SimplePair::begin(CMMC_SimplePair_mode_t mode, u8 *pairkey, u8 *msg,
     this->begin(mode, pairkey, msg);
 }
 void CMMC_SimplePair::begin(CMMC_SimplePair_mode_t mode, u8 *pairkey, u8 *msg) {
-    _preconfig_wifi_status(mode);
 
     static CMMC_SimplePair* _this = this;
 
@@ -266,5 +265,6 @@ void CMMC_SimplePair::add_listener(simple_pair_status_cb_t cb) {
 }
 
 void CMMC_SimplePair::start() {
+    _preconfig_wifi_status(this->_mode);
     this->_simple_pair_init();
 }
