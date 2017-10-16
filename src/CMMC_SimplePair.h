@@ -27,38 +27,38 @@ enum CMMC_SimplePair_event_t {
 #define EVENT_SUCCESS CSP_EVENT_SUCCESS
 #define EVENT_ERROR CSP_EVENT_ERROR
 
-typedef void (*cmmc_simple_pair_err_status_t)(u8 *sa, u8 status, const char* cause);
-typedef void (*cmmc_simple_pair_succ_status_t)(u8 *sa, u8 status, const u8* key);
+typedef void (*cmmc_simple_pair_status_cb_t)(u8 status, u8 *sa, const u8* cause);
 typedef void (*cmmc_debug_cb_t)(const char* cause);
 
 class CMMC_SimplePair
 {
   public:
       // constructure
+      ~CMMC_SimplePair() {}
       CMMC_SimplePair() {
-        auto cmmc_err_blank = [](u8* sa, u8 status, const char* s) {};
-        auto cmmc_succ_blank = [](u8* sa, u8 status, const u8* b) {};
+        auto cmmc_err_blank = [](u8 status, u8 *sa, const u8* s) {};
         auto blank = [](u8* sa, u8 status) {};
         this->_sp_callback = blank;
         this->_user_sp_callback = blank;
         this->_user_debug_cb = [](const char* s) { };
-        this->_user_cmmc_sp_success_callback = cmmc_succ_blank;
+        this->_user_cmmc_sp_success_callback = cmmc_err_blank;
         this->_user_cmmc_sp_error_callback = cmmc_err_blank;
       }
-      ~CMMC_SimplePair() {}
 
-      void begin(CMMC_SimplePair_mode_t, u8* pairkey, u8* message = NULL);
-      void begin(CMMC_SimplePair_mode_t, u8* pairkey, u8* message,
-          cmmc_simple_pair_succ_status_t, cmmc_simple_pair_err_status_t);
+      void begin(CMMC_SimplePair_mode_t mode, u8* pairkey = NULL, u8* message = NULL);
+      void begin(CMMC_SimplePair_mode_t mode, cmmc_simple_pair_status_cb_t cb) {
+        this->begin(mode, NULL, NULL, cb);
+      };
+      void begin(CMMC_SimplePair_mode_t mode, u8* pairkey, u8* message, cmmc_simple_pair_status_cb_t cb);
       void start();
       void mode(CMMC_SimplePair_mode_t);
-      int mode();
-      void set_pair_key(u8 *);
+      void set_pair_key(u8 *key);
+      void set_pair_key(u8 b);
       void set_message(u8 *);
       void add_listener(simple_pair_status_cb_t);
-      void add_debug_listener(cmmc_debug_cb_t);
-      void on(CMMC_SimplePair_event_t, cmmc_simple_pair_succ_status_t);
-      void on(CMMC_SimplePair_event_t, cmmc_simple_pair_err_status_t);
+      void debug(cmmc_debug_cb_t);
+      void on(CMMC_SimplePair_event_t evt, cmmc_simple_pair_status_cb_t cb);
+      int mode();
   private:
       char debug_buffer[CSP_DEBUG_BUFFER];
       u8 _pair_key[16];
@@ -67,8 +67,8 @@ class CMMC_SimplePair
       simple_pair_status_cb_t _sp_callback = NULL;
       simple_pair_status_cb_t _user_sp_callback = NULL;
       cmmc_debug_cb_t _user_debug_cb;
-      cmmc_simple_pair_err_status_t _user_cmmc_sp_error_callback = NULL;
-      cmmc_simple_pair_succ_status_t _user_cmmc_sp_success_callback = NULL;
+      cmmc_simple_pair_status_cb_t _user_cmmc_sp_error_callback = NULL;
+      cmmc_simple_pair_status_cb_t _user_cmmc_sp_success_callback = NULL;
       void on_sp_st_finish(u8*);
       void on_sp_st_ap_recv_neg(u8*);
       void on_sp_st_wait_timeout(u8*);
@@ -80,7 +80,7 @@ class CMMC_SimplePair
       void on_sp_st_max(u8*);
       void _simple_pair_init();
       void debug_cb(const char*);
+      void _preconfig_wifi_status(CMMC_SimplePair_mode_t mode);
 
 };
-
 #endif //CMMC_SimplePair_H

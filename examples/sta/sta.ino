@@ -12,27 +12,22 @@ void dump(const u8* data, size_t size) {
   Serial.println();
 }
 
-void evt_success(u8* sa, u8 status, const u8* key) {
-  Serial.printf("[CSP_EVENT_SUCCESS] STATUS: %d\r\n", status);
-  Serial.printf("WITH KEY: "); dump(key, 16);
-  Serial.printf("WITH MAC: "); dump(sa, 6);
-}
-
-void evt_error(u8* sa, u8 status, const char* cause) {
-  Serial.printf("[CSP_EVENT_ERROR] %d: %s\r\n", status, cause);
+void evt_callback(u8 status, u8* sa, const u8* data) {
+  if (status == 0) {
+    Serial.printf("[CSP_EVENT_SUCCESS] STATUS: %d\r\n", status);
+    Serial.printf("WITH KEY: "); dump(data, 16);
+    Serial.printf("WITH MAC: "); dump(sa, 6);
+  }
+  else {
+    Serial.printf("[CSP_EVENT_ERROR] %d: %s\r\n", status, (const char*)data);
+  }
 }
 
 
 void setup()
 {
   Serial.begin(115200);
-  u8 pair_key[16] = {0x09, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-     0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f};
-
-  instance.begin(SLAVE_MODE, pair_key, NULL, evt_success, evt_error);
-  instance.add_debug_listener([](const char* s) {
-    Serial.printf("[USER]: %s\r\n", s);
-  });
+  instance.begin(SLAVE_MODE, evt_callback);
   instance.start();
 }
 

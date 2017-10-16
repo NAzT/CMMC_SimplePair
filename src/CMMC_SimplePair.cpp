@@ -8,12 +8,16 @@ void CMMC_SimplePair::mode(CMMC_SimplePair_mode_t mode) {
   this->_mode = mode;
 }
 
+void CMMC_SimplePair::set_pair_key(u8 b) {
+  this->_pair_key[0] = b;
+}
+
 void CMMC_SimplePair::set_pair_key(u8 *tmp) {
   memcpy(this->_pair_key, tmp, 16);
 }
 
 void CMMC_SimplePair::set_message(u8 *tmp) {
-  memcpy(this->_message, tmp, 16);
+  memcpy(this->_message+6, tmp, 10);
 }
 
 void CMMC_SimplePair::on_sp_st_finish(u8* sa) {
@@ -22,7 +26,7 @@ void CMMC_SimplePair::on_sp_st_finish(u8* sa) {
     u8 ex_key[16];
     simple_pair_get_peer_ref(NULL, NULL, ex_key);
     this->debug_cb("Simple Pair: AP FINISH");
-    _user_cmmc_sp_success_callback(sa, SP_ST_AP_FINISH, ex_key);
+    _user_cmmc_sp_success_callback(SP_ST_AP_FINISH, sa, ex_key);
     /* if test ok , deinit simple pair */
     simple_pair_deinit();
   }
@@ -31,7 +35,7 @@ void CMMC_SimplePair::on_sp_st_finish(u8* sa) {
     u8 ex_key[16];
     simple_pair_get_peer_ref(NULL, NULL, ex_key);
     this->debug_cb("Simple Pair: STA FINISH");
-    _user_cmmc_sp_success_callback(sa, SP_ST_STA_FINISH, ex_key);
+    _user_cmmc_sp_success_callback(SP_ST_STA_FINISH, sa, ex_key);
     simple_pair_deinit();
   }
 }
@@ -40,15 +44,15 @@ int CMMC_SimplePair::mode() {
   return this->_mode;
 }
 
-void CMMC_SimplePair::on(CMMC_SimplePair_event_t evt, cmmc_simple_pair_succ_status_t cb) {
-  if (evt == CSP_EVENT_SUCCESS && cb != NULL) {
-    this->_user_cmmc_sp_success_callback = cb;
-  }
-}
-
-void CMMC_SimplePair::on(CMMC_SimplePair_event_t evt, cmmc_simple_pair_err_status_t cb) {
+void CMMC_SimplePair::on(CMMC_SimplePair_event_t evt, cmmc_simple_pair_status_cb_t cb) {
   if (evt == CSP_EVENT_ERROR && cb != NULL) {
     this->_user_cmmc_sp_error_callback = cb;
+  }
+  else if (evt == CSP_EVENT_SUCCESS && cb != NULL) {
+    this->_user_cmmc_sp_success_callback = cb;
+  }
+  else {
+    // TODO: handle invalid type
   }
 }
 
@@ -174,31 +178,42 @@ void CMMC_SimplePair::on_sp_st_op_error(u8* sa) { }
 void CMMC_SimplePair::on_sp_st_unknown_error(u8* sa) { }
 void CMMC_SimplePair::on_sp_st_max(u8* sa) { }
 
-void CMMC_SimplePair::add_debug_listener(cmmc_debug_cb_t cb) {
+void CMMC_SimplePair::debug(cmmc_debug_cb_t cb) {
   if (cb != NULL) {
     this->_user_debug_cb = cb;
   }
 }
-
-void CMMC_SimplePair::begin(CMMC_SimplePair_mode_t mode, u8 *pairkey, u8 *msg,
-  cmmc_simple_pair_succ_status_t succ_cb, cmmc_simple_pair_err_status_t err_cb) {
-    this->on(CSP_EVENT_SUCCESS, succ_cb);
-    this->on(CSP_EVENT_ERROR, err_cb);
-    this->begin(mode, pairkey, msg);
+void CMMC_SimplePair:: _preconfig_wifi_status(CMMC_SimplePair_mode_t mode) {
+    if (mode == CSP_MODE_AP) {
+      WiFi.disconnect(0);
+      WiFi.mode(WIFI_AP);
+      String apName =  String("CMMC-") + String(ESP.getChipId());
+      WiFi.softAP(apName.c_str());
+    }
+    else {
+      WiFi.disconnect(0);
+      WiFi.mode(WIFI_STA);
+    }
 }
 
+
+void CMMC_SimplePair::begin(CMMC_SimplePair_mode_t mode, u8 *pairkey, u8 *msg,
+  cmmc_simple_pair_status_cb_t cb) {
+    this->on(CSP_EVENT_SUCCESS, cb);
+    this->on(CSP_EVENT_ERROR, cb);
+    this->begin(mode, pairkey, msg);
+}
 void CMMC_SimplePair::begin(CMMC_SimplePair_mode_t mode, u8 *pairkey, u8 *msg) {
-  WiFi.disconnect(0);
-  delay(100);
-  WiFi.mode(WIFI_STA);
-  delay(100);
+    static CMMC_SimplePair* _this = this;
+
+    _preconfig_wifi_status(mode);
+
+    if (pairkey == NULL) { };
+    if (msg == NULL) { };
 
     this->mode(mode);
+    this->set_message(msg);
     this->set_pair_key(pairkey);
-    if (mode == CSP_MODE_AP) {
-      this->set_message(msg);
-    }
-    static CMMC_SimplePair* _this = this;
     this->_sp_callback = [](u8 *sa, u8 status) {
         sprintf(_this->debug_buffer, "event %d", status);
         _this->debug_cb(_this->debug_buffer);
@@ -212,35 +227,35 @@ void CMMC_SimplePair::begin(CMMC_SimplePair_mode_t mode, u8 *pairkey, u8 *msg) {
             break;
           case SP_ST_WAIT_TIMEOUT:
             _this->on_sp_st_wait_timeout(sa);
-            _this->_user_cmmc_sp_error_callback(sa, status, "SP_ST_WAIT_TIMEOUT");
+            _this->_user_cmmc_sp_error_callback(status, sa, (const u8*)"SP_ST_WAIT_TIMEOUT");
             break;
           case SP_ST_SEND_ERROR:
             _this->on_sp_st_send_error(sa);
-            _this->_user_cmmc_sp_error_callback(sa, status, "SP_ST_SEND_ERROR");
+            _this->_user_cmmc_sp_error_callback(status, sa, (const u8*)"SP_ST_SEND_ERROR");
             break;
           case SP_ST_KEY_INSTALL_ERR:
             _this->on_sp_st_key_install_err(sa);
-            _this->_user_cmmc_sp_error_callback(sa, status, "SP_ST_KEY_INSTALL_ERR");
+            _this->_user_cmmc_sp_error_callback(status, sa, (const u8*)"SP_ST_KEY_INSTALL_ERR");
             break;
           case SP_ST_KEY_OVERLAP_ERR:
             _this->on_sp_st_key_overlap_err(sa);
-            _this->_user_cmmc_sp_error_callback(sa, status, "SP_ST_KEY_OVERLAP_ERR");
+            _this->_user_cmmc_sp_error_callback(status, sa, (const u8*)"SP_ST_KEY_OVERLAP_ERR");
             break;
           case SP_ST_OP_ERROR:
             _this->on_sp_st_op_error(sa);
-            _this->_user_cmmc_sp_error_callback(sa, status, "SP_ST_OP_ERROR");
+            _this->_user_cmmc_sp_error_callback(status, sa, (const u8*)"SP_ST_OP_ERROR");
             break;
           case SP_ST_UNKNOWN_ERROR:
             _this->on_sp_st_unknown_error(sa);
-            _this->_user_cmmc_sp_error_callback(sa, status, "SP_ST_UNKNOWN_ERROR");
+            _this->_user_cmmc_sp_error_callback(status, sa, (const u8*)"SP_ST_UNKNOWN_ERROR");
             break;
           case SP_ST_MAX:
             _this->on_sp_st_max(sa);
-            _this->_user_cmmc_sp_error_callback(sa, status, "SP_ST_MAX");
+            _this->_user_cmmc_sp_error_callback(status, sa, (const u8*)"SP_ST_MAX");
             break;
           default:
             _this->on_sp_st_unknown_error(sa);
-            _this->_user_cmmc_sp_error_callback(sa, status, "SP_ST_UNKNOWN_ERROR");
+            _this->_user_cmmc_sp_error_callback(status, sa, (const u8*)"SP_ST_UNKNOWN_ERROR");
               break;
           }
     };
