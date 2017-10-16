@@ -60,9 +60,10 @@ class CMMC_SimplePair
       void on(CMMC_SimplePair_event_t evt, cmmc_simple_pair_status_cb_t cb);
       int mode();
   private:
-      char debug_buffer[CSP_DEBUG_BUFFER];
-      u8 _pair_key[16];
-      u8 _message[16];
+      char _debug_buffer[CSP_DEBUG_BUFFER];
+      u8 _pair_key[16] = {0xff, 0x63, 0x6d, 0x6d, 0x63, 0x04, 0x05, 0x06, 0x07,
+     0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0fa};
+      u8 _message[16] = {0x00};
       CMMC_SimplePair_mode_t _mode;
       simple_pair_status_cb_t _sp_callback = NULL;
       simple_pair_status_cb_t _user_sp_callback = NULL;
