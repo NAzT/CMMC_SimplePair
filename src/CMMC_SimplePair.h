@@ -22,13 +22,14 @@ enum CMMC_SimplePair_event_t {
 #ifndef CSP_DEBUG_BUFFER
   #define CSP_DEBUG_BUFFER 120
 #endif
+
 #define MASTER_MODE CSP_MODE_AP
 #define SLAVE_MODE CSP_MODE_STA
 #define EVENT_SUCCESS CSP_EVENT_SUCCESS
 #define EVENT_ERROR CSP_EVENT_ERROR
 
 typedef void (*cmmc_simple_pair_status_cb_t)(u8 status, u8 *sa, const u8* cause);
-typedef void (*cmmc_debug_cb_t)(const char* cause);
+typedef void (*cmmc_debug_cb_t)(const char* msg);
 
 class CMMC_SimplePair
 {
