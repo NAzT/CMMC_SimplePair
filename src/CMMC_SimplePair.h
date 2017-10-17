@@ -55,7 +55,7 @@ class CMMC_SimplePair
       void mode(CMMC_SimplePair_mode_t);
       void set_pair_key(u8 *key);
       void set_pair_key(u8 b);
-      void set_message(u8 *);
+      void set_message(u8 *, int len = 16);
       void add_listener(simple_pair_status_cb_t);
       void debug(cmmc_debug_cb_t);
       void on(CMMC_SimplePair_event_t evt, cmmc_simple_pair_status_cb_t cb);

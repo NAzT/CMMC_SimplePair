@@ -17,9 +17,9 @@ void CMMC_SimplePair::set_pair_key(u8 *key) {
     memcpy(this->_pair_key, key, 16);
 }
 
-void CMMC_SimplePair::set_message(u8 *msg) {
+void CMMC_SimplePair::set_message(u8 *msg, int len) {
     if (msg == NULL) return;
-    memcpy(this->_message+6, msg, 10);
+    memcpy(this->_message, msg, len);
 }
 
 void CMMC_SimplePair::on_sp_st_finish(u8* sa) {
